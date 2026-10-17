@@ -1,0 +1,1102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "darwin-arm64"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  passwordHash  String?
+  provider      String? // 'email' | 'google'
+  providerId    String? // Google user ID
+  name          String? // User's display name
+  image         String? // Profile image URL
+  tier          String   @default("FREE") // FREE | PRO | CREATOR | ENTERPRISE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  bookingCodes              BookingCode[]
+  analyses                  Analysis[]
+  userProfile               UserProfile?               @relation(fields: [userProfileId], references: [id])
+  analysisHistory           AnalysisHistory[]
+  userAnalyses              UserAnalysis[]
+  communityPredictions      CommunityPrediction[]
+  usageMetrics              UsageMetric[]
+  subscription              Subscription?              @relation(fields: [subscriptionId], references: [id])
+  matchCommunityPredictions MatchCommunityPrediction[]
+  chatMessages              ChatMessage[]
+  messageReactions          MessageReaction[]
+  messageReports            MessageReport[]
+  userCooldown              UserCooldown?
+  userMutes                 UserMute[]
+  mutedUsers                UserMute[]                 @relation("MutedByRelation")
+  predictions               Prediction[]
+  userReputation            UserReputation?
+  dailyMissions             DailyMission[]
+  userMissionProgress       UserMissionProgress[]
+  userStreak                UserStreak?
+  userBadges                UserBadge[]
+  notifications             Notification[]
+  feedItems                 FeedItem[]
+  userPreferences           UserPreferences?
+  userProfileId             String?
+  subscriptionId            String?
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                 String @id @default(cuid())
+  userId             String @unique
+  reputationScore    Int    @default(0)
+  riskFlag           String @default("neutral")
+  correctPredictions Int    @default(0)
+  totalPredictions   Int    @default(0)
+  accuracyRate       Float  @default(0.0)
+
+  // Community Intelligence fields
+  communityScore    Float  @default(0.0)
+  consensusAccuracy Float  @default(0.0)
+  contributionCount Int    @default(0)
+  topPredictorCount Int    @default(0)
+  User              User[]
+
+  @@map("user_profiles")
+}
+
+model BookingCode {
+  id         String   @id @default(cuid())
+  userId     String
+  code       String   @unique
+  matchId    String?
+  analysisId String?
+  status     String   @default("pending") // pending, processing, completed, failed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@map("booking_codes")
+}
+
+model Analysis {
+  id           String    @id @default(cuid())
+  userId       String
+  matchId      String
+  homeTeam     String
+  awayTeam     String
+  league       String
+  venue        String?
+  weather      String?
+  status       String    @default("pending") // pending, processing, completed, failed
+  prediction   String? // JSON string of prediction data
+  result       String? // "correct", "wrong", "pending"
+  confidence   Int? // 1-5 stars
+  reasoning    String?
+  aiAnalysis   String? // Cached AI analysis
+  aiAnalysisAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  User         User      @relation(fields: [userId], references: [id])
+
+  @@map("analyses")
+}
+
+model AnalysisHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  analysisId String
+  status     String   @default("pending") // pending, processing, completed, failed
+  createdAt  DateTime @default(now())
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@map("analysis_history")
+}
+
+model UserAnalysis {
+  id         String   @id @default(cuid())
+  userId     String
+  analysisId String
+  rating     Int? // 1-5 stars
+  comment    String?
+  createdAt  DateTime @default(now())
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@map("user_analyses")
+}
+
+model CommunityPrediction {
+  id         String   @id @default(cuid())
+  userId     String
+  matchId    String
+  homeTeam   String
+  awayTeam   String
+  prediction String
+  confidence Int      @default(3)
+  reasoning  String?
+  createdAt  DateTime @default(now())
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@map("community_predictions")
+}
+
+model MatchCommunityPrediction {
+  id            String       @id @default(cuid())
+  userId        String
+  matchId       String
+  homeTeam      String
+  awayTeam      String
+  prediction    String
+  confidence    Int          @default(3)
+  reasoning     String?
+  createdAt     DateTime     @default(now())
+  User          User         @relation(fields: [userId], references: [id])
+  Competition   Competition? @relation(fields: [competitionId], references: [id])
+  competitionId String?
+  Match         Match        @relation(fields: [matchId], references: [id])
+  ChatRoom      ChatRoom?    @relation(fields: [chatRoomId], references: [id])
+  chatRoomId    String?
+
+  @@map("match_community_predictions")
+}
+
+model UsageMetric {
+  id              String   @id @default(cuid())
+  userId          String
+  date            String // YYYY-MM-DD
+  analysisCount   Int      @default(0)
+  predictionCount Int      @default(0)
+  apiCallsCount   Int      @default(0)
+  createdAt       DateTime @default(now())
+  User            User     @relation(fields: [userId], references: [id])
+
+  @@map("usage_metrics")
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  tier               String    @default("FREE") // FREE | PRO | CREATOR | ENTERPRISE
+  status             String    @default("active") // active, cancelled, expired
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  renewsAt           DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  User               User[]
+
+  @@map("subscriptions")
+}
+
+model Competition {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  displayName     String
+  country         String?
+  logo            String?
+  leagueApiId     String?  // External API ID for league
+  currentSeason   String?  // Current season identifier
+  isPopular       Boolean  @default(false)
+  popularityScore Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  matchCommunityPredictions MatchCommunityPrediction[]
+  chatRooms                 ChatRoom[]
+  dailyMissions             DailyMission[]
+  Match                     Match[]
+
+  @@index([isPopular, popularityScore])
+  @@index([country])
+  @@index([leagueApiId])
+  @@map("competitions")
+}
+
+model Match {
+  id          String    @id @default(cuid())
+  homeTeam    String
+  awayTeam    String
+  league      String
+  leagueApiId String?   // External API league ID
+  kickoffTime DateTime
+  venue       String?
+  weather     String? // Weather conditions
+  status      String    @default("scheduled") // scheduled, live, finished
+  homeScore   Int?
+  awayScore   Int?
+  source      String    @default("manual") // manual, fixture_api, etc.
+
+  // AI Analysis caching
+  aiAnalysis   String? // Cached AI analysis (JSON stored as text)
+  aiAnalysisAt DateTime? // When AI was last run
+
+  // New foreign keys for normalized entities (optional for backward compatibility)
+  homeTeamId  String?
+  awayTeamId  String?
+  venueId     String?
+  refereeId   String?
+
+  // Relations
+  competitionId             String?
+  competition               Competition?               @relation(fields: [competitionId], references: [id])
+  matchCommunityPredictions MatchCommunityPrediction[]
+  chatRooms                 ChatRoom[]
+  predictions               Prediction[]
+  aiPredictions             AiPrediction[]
+  
+  // New relations from data foundation architecture
+  homeTeamEntity            Team?                     @relation("HomeTeamMatches", fields: [homeTeamId], references: [id])
+  awayTeamEntity            Team?                     @relation("AwayTeamMatches", fields: [awayTeamId], references: [id])
+  venueEntity               Venue?                    @relation(fields: [venueId], references: [id])
+  refereeEntity             Referee?                  @relation(fields: [refereeId], references: [id])
+  events                    MatchEvent[]
+  lineups                   MatchLineup[]
+  statistics                MatchStatistics[]
+  injuries                  MatchInjury[]
+  weatherData               MatchWeather?
+  teamMatchStats            TeamMatchStats[]
+  playerMatchStats          PlayerMatchStats[]
+  xgTeamMatches             XgTeamMatch[]
+  xgPlayerMatches           XgPlayerMatch[]
+  features                  MatchFeature?
+  marketProbabilities       MarketProbability[]
+
+  @@index([league, kickoffTime])
+  @@index([homeTeam, awayTeam])
+  @@index([status])
+  @@index([source])
+  @@index([competitionId])
+  @@index([leagueApiId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([venueId])
+  @@index([refereeId])
+  @@map("matches")
+}
+
+model ChatRoom {
+  id          String   @id @default(cuid())
+  type        String // "match", "competition", "global"
+  referenceId String? // Match ID for match rooms, Competition ID for competition rooms, null for global
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  competition               Competition?               @relation(fields: [referenceId], references: [id])
+  matchCommunityPredictions MatchCommunityPrediction[]
+  chatMessages              ChatMessage[]
+  Match                     Match?                     @relation(fields: [matchId], references: [id])
+  matchId                   String?
+
+  @@index([type, referenceId])
+  @@index([isActive])
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id                String    @id @default(cuid())
+  roomId            String
+  userId            String
+  message           String
+  replyToId         String?
+  isEdited          Boolean   @default(false)
+  isDeleted         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  editedAt          DateTime?
+  
+  // Visibility scoring fields
+  visibilityScore   Float     @default(0.0)
+  spamFlagCount     Int       @default(0)
+  reportCount       Int       @default(0)
+  isCollapsed       Boolean   @default(false)
+  rapidPostPenalty  Float     @default(0.0)
+  lastScoreUpdate   DateTime  @default(now())
+
+  // Relations
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room              ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  reactions         MessageReaction[]
+  reports           MessageReport[]
+
+  @@index([roomId, createdAt])
+  @@index([userId, createdAt])
+  @@index([replyToId])
+  @@index([visibilityScore])
+  @@index([isCollapsed])
+  @@map("chat_messages")
+}
+
+model MessageReaction {
+  id           String   @id @default(cuid())
+  messageId    String
+  userId       String
+  reactionType String // "👍", "🔥", "😂", "👎", etc.
+  createdAt    DateTime @default(now())
+
+  // Relations
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, reactionType])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
+}
+
+model MessageReport {
+  id         String   @id @default(cuid())
+  messageId  String
+  reporterId String
+  reason     String   // "spam", "harassment", "inappropriate", "off-topic"
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter  User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, reporterId])
+  @@index([messageId])
+  @@index([reporterId])
+  @@index([reason])
+  @@map("message_reports")
+}
+
+model UserCooldown {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  cooldownEndsAt DateTime
+  reason         String   // "rapid_posting", "harassment_detection"
+  severityLevel  Int      @default(1) // 1=30s, 2=2min, 3=10min, 4=1hour
+  createdAt      DateTime @default(now())
+
+  // Relations
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([cooldownEndsAt])
+  @@map("user_cooldowns")
+}
+
+model UserMute {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  mutedBy    String   // User who initiated the mute
+  reason     String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  muter      User     @relation("MutedByRelation", fields: [mutedBy], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mutedBy])
+  @@map("user_mutes")
+}
+
+// Credibility System Models
+
+model Prediction {
+  id             String    @id @default(cuid())
+  userId         String
+  matchId        String
+  marketType     String // "1X2", "OVER_UNDER_2_5", "BTTS", "OVER_UNDER_CORNERS", "CARDS_OVER_UNDER", "AI_GENERATED"
+  predictedValue String // e.g., "1", "OVER", "YES", "2.5", "9.5"
+  confidence     Int       @default(3) // 1-5 stars
+  createdAt      DateTime  @default(now())
+  lockedAt       DateTime?
+  result         String    @default("pending") // "pending", "won", "lost"
+
+  // Relations
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match            Match                @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  auditLogs        PredictionAuditLog[]
+  UserReputation   UserReputation?      @relation(fields: [userReputationId], references: [id])
+  userReputationId String?
+
+  @@index([userId, matchId])
+  @@index([matchId, result])
+  @@index([createdAt])
+  @@map("predictions")
+}
+
+model UserReputation {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  totalPredictions   Int      @default(0)
+  correctPredictions Int      @default(0)
+  accuracyScore      Float    @default(0.0)
+  reputationPoints   Int      @default(0)
+  rankTier           String   @default("Beginner") // "Beginner", "Analyst", "Expert", "Elite", "Verified Predictor"
+  lastUpdated        DateTime @updatedAt
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  predictions Prediction[]
+
+  @@index([reputationPoints])
+  @@index([accuracyScore])
+  @@map("user_reputations")
+}
+
+model PredictionAuditLog {
+  id           String   @id @default(cuid())
+  predictionId String
+  oldState     String // JSON string of previous state
+  newState     String // JSON string of new state
+  changedAt    DateTime @default(now())
+
+  // Relations
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId])
+  @@index([changedAt])
+  @@map("prediction_audit_logs")
+}
+
+// Daily Engagement System Models
+
+model DailyMission {
+  id               String   @id @default(cuid())
+  date             String // YYYY-MM-DD format
+  missionType      String // "PREDICT_3_MATCHES", "PARTICIPATE_DISCUSSION", "REACT_5_PREDICTIONS", "HIGH_CONFIDENCE_PREDICTION", "ANALYZE_AI_PREDICTION"
+  requirementValue Int // e.g., 3, 1, 5, 4, 1
+  description      String // Human-readable description
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  // Relations
+  userProgress  UserMissionProgress[]
+  User          User?                 @relation(fields: [userId], references: [id])
+  userId        String?
+  Competition   Competition?          @relation(fields: [competitionId], references: [id])
+  competitionId String?
+
+  @@unique([date, missionType])
+  @@index([date])
+  @@index([isActive])
+  @@map("daily_missions")
+}
+
+model UserMissionProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  missionId   String
+  progress    Int       @default(0)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission DailyMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, missionId])
+  @@index([userId, completed])
+  @@index([completedAt])
+  @@map("user_mission_progress")
+}
+
+model UserStreak {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastActiveDate String? // YYYY-MM-DD format
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([currentStreak])
+  @@index([longestStreak])
+  @@map("user_streaks")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeType String // "7_DAY_ACTIVE", "30_DAY_ANALYST", "CONSISTENCY_MASTER"
+  badgeName String // Display name
+  badgeIcon String // Emoji or icon
+  earnedAt  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeType])
+  @@index([userId])
+  @@index([badgeType])
+  @@map("user_badges")
+}
+
+// Real-Time Notification and Feed System Models
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String // "match_starting", "match_finished", "ai_confidence_spike", "lineup_released", "red_card", "penalty", "halftime", "fulltime", "comment_reply", "prediction_liked", "top_predictor", "rank_upgrade", "streak_milestone", "daily_missions", "community_announcement"
+  title          String
+  message        String
+  relatedMatchId String?
+  relatedUserId  String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model UserPreferences {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  notifyMatchEvents   Boolean  @default(true)
+  notifySocial        Boolean  @default(true)
+  notifyAIAlerts      Boolean  @default(true)
+  notifyDailyMissions Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model FeedItem {
+  id             String   @id @default(cuid())
+  userId         String?
+  type           String // "match", "discussion", "ai_alert", "community"
+  title          String
+  description    String?
+  metadata       String? // JSON string for additional data
+  relevanceScore Float    @default(0.0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, relevanceScore, createdAt])
+  @@index([type, isActive, createdAt])
+  @@index([relevanceScore])
+  @@index([createdAt])
+  @@map("feed_items")
+}
+
+// AI Prediction Feedback Loop Models
+
+model AiPrediction {
+  id                String   @id @default(cuid())
+  matchId           String
+  marketType        String   // '1X2', 'BTTS', 'OVER_2_5', 'CORNERS', 'CARDS'
+  predictedProbability Float
+  predictedValue    String   // 'HOME', 'AWAY', 'DRAW', 'YES', 'NO', 'OVER', 'UNDER'
+  confidenceLevel   Float    @default(0.5) // 0.0 to 1.0
+  createdAt         DateTime @default(now())
+
+  // Relations
+  match             Match? @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  results           AiPredictionResult[]
+  
+  @@index([matchId, marketType])
+  @@index([marketType, createdAt])
+  @@map("ai_predictions")
+}
+
+model AiPredictionResult {
+  id               String   @id @default(cuid())
+  aiPredictionId   String
+  actualOutcome    String   // 'HOME', 'AWAY', 'DRAW', 'YES', 'NO', 'OVER', 'UNDER'
+  wasCorrect       Boolean
+  errorMargin      Float    // Difference between predicted probability and actual outcome
+  evaluatedAt      DateTime @default(now())
+
+  // Relations
+  aiPrediction     AiPrediction @relation(fields: [aiPredictionId], references: [id], onDelete: Cascade)
+  
+  @@index([aiPredictionId])
+  @@index([wasCorrect, evaluatedAt])
+  @@map("ai_prediction_results")
+}
+
+model AiMarketCalibration {
+  id                String   @id @default(cuid())
+  marketType        String   @unique
+  totalPredictions  Int      @default(0)
+  correctPredictions Int     @default(0)
+  calibrationFactor Float   @default(1.0) // Applied to future predictions
+  lastUpdated       DateTime @default(now())
+  
+  @@index([marketType])
+  @@map("ai_market_calibrations")
+}
+
+// ============================================================
+// DATA FOUNDATION ARCHITECTURE - NEW MODELS
+// ============================================================
+
+// CORE ENTITIES
+
+model Team {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  shortName       String?
+  logo            String?
+  foundedYear     Int?
+  stadium         String?
+  country         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  homeMatches     Match[]  @relation("HomeTeamMatches")
+  awayMatches     Match[]  @relation("AwayTeamMatches")
+  teamMatchStats  TeamMatchStats[]
+  teamSeasonStats TeamSeasonStats[]
+  xgTeamMatches   XgTeamMatch[]
+  players         Player[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("teams")
+}
+
+model Season {
+  id              String   @id @default(cuid())
+  name            String   @unique // e.g., "2024-2025"
+  startDate       DateTime
+  endDate         DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  teamSeasonStats TeamSeasonStats[]
+  playerSeasonStats PlayerSeasonStats[]
+
+  @@index([isActive])
+  @@map("seasons")
+}
+
+model Venue {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  city            String?
+  country         String?
+  capacity        Int?
+  stadiumType     String? // e.g., "football", "multi-purpose"
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  matches         Match[]
+
+  @@index([city])
+  @@index([isActive])
+  @@map("venues")
+}
+
+model Referee {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  country         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  matches         Match[]
+
+  @@index([country])
+  @@index([isActive])
+  @@map("referees")
+}
+
+model Player {
+  id              String   @id @default(cuid())
+  name            String
+  dateOfBirth     DateTime?
+  nationality     String?
+  position        String? // e.g., "forward", "midfielder", "defender", "goalkeeper"
+  shirtNumber     Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  teamId          String?
+  team            Team?    @relation(fields: [teamId], references: [id])
+  playerMatchStats PlayerMatchStats[]
+  playerSeasonStats PlayerSeasonStats[]
+  xgPlayerMatches XgPlayerMatch[]
+  matchLineups    MatchLineup[]
+
+  @@index([teamId])
+  @@index([isActive])
+  @@map("players")
+}
+
+// Extend existing Match model with new relations
+// Note: Match model already exists above, we'll add relations there
+
+// MATCH DATA
+
+model MatchEvent {
+  id              String   @id @default(cuid())
+  matchId         String
+  eventType       String   // "goal", "card", "substitution", "injury", "var"
+  eventTime       Int      // Minute of the event
+  team            String   // Team name (will be normalized to teamId later)
+  player          String?  // Player name (will be normalized to playerId later)
+  detail          String?  // Additional detail (e.g., "yellow card", "penalty")
+  createdAt       DateTime @default(now())
+
+  // Relations
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([eventType])
+  @@map("match_events")
+}
+
+model MatchLineup {
+  id              String   @id @default(cuid())
+  matchId         String
+  team            String   // Team name
+  isStarting      Boolean  @default(true)
+  position        String?
+  shirtNumber     Int?
+  playerId        String?
+  player          Player?  @relation(fields: [playerId], references: [id])
+  createdAt       DateTime @default(now())
+
+  // Relations
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([team])
+  @@map("match_lineups")
+}
+
+model MatchStatistics {
+  id              String   @id @default(cuid())
+  matchId         String
+  team            String   // Team name
+  possession      Float?   // Percentage
+  shots           Int?
+  shotsOnTarget   Int?
+  corners         Int?
+  fouls           Int?
+  offsides        Int?
+  yellowCards     Int?
+  redCards        Int?
+  saves           Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, team])
+  @@index([matchId])
+  @@map("match_statistics")
+}
+
+model MatchInjury {
+  id              String   @id @default(cuid())
+  matchId         String
+  team            String   // Team name
+  player          String   // Player name
+  injuryType      String?  // e.g., "hamstring", "ankle"
+  severity        String?  // e.g., "minor", "moderate", "severe"
+  isDoubtful      Boolean  @default(false)
+  isSuspended     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([team])
+  @@map("match_injuries")
+}
+
+model MatchWeather {
+  id              String   @id @default(cuid())
+  matchId         String
+  temperature     Float?   // Celsius
+  weatherCondition String? // e.g., "sunny", "rainy", "cloudy"
+  windSpeed       Float?   // km/h
+  humidity        Float?   // Percentage
+  precipitation   Float?   // mm
+  fetchedAt       DateTime @default(now())
+
+  // Relations
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId])
+  @@map("match_weather")
+}
+
+// STATISTICS
+
+model TeamMatchStats {
+  id              String   @id @default(cuid())
+  matchId         String
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id])
+  match           Match    @relation(fields: [matchId], references: [id])
+  goalsScored     Int      @default(0)
+  goalsConceded  Int      @default(0)
+  shots           Int?
+  shotsOnTarget   Int?
+  possession      Float?
+  corners         Int?
+  fouls           Int?
+  offsides        Int?
+  yellowCards     Int?
+  redCards        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([matchId, teamId])
+  @@index([matchId])
+  @@index([teamId])
+  @@map("team_match_stats")
+}
+
+model TeamSeasonStats {
+  id              String   @id @default(cuid())
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id])
+  seasonId        String
+  season          Season   @relation(fields: [seasonId], references: [id])
+  matchesPlayed   Int      @default(0)
+  wins            Int      @default(0)
+  draws           Int      @default(0)
+  losses          Int      @default(0)
+  goalsScored     Int      @default(0)
+  goalsConceded  Int      @default(0)
+  points          Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([teamId, seasonId])
+  @@index([teamId])
+  @@index([seasonId])
+  @@map("team_season_stats")
+}
+
+model PlayerMatchStats {
+  id              String   @id @default(cuid())
+  matchId         String
+  playerId        String
+  player          Player   @relation(fields: [playerId], references: [id])
+  match           Match    @relation(fields: [matchId], references: [id])
+  goals           Int      @default(0)
+  assists         Int      @default(0)
+  shots           Int?
+  shotsOnTarget   Int?
+  minutesPlayed   Int?
+  yellowCards     Int?
+  redCards        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([matchId, playerId])
+  @@index([matchId])
+  @@index([playerId])
+  @@map("player_match_stats")
+}
+
+model PlayerSeasonStats {
+  id              String   @id @default(cuid())
+  playerId        String
+  player          Player   @relation(fields: [playerId], references: [id])
+  seasonId        String
+  season          Season   @relation(fields: [seasonId], references: [id])
+  matchesPlayed   Int      @default(0)
+  goals           Int      @default(0)
+  assists         Int      @default(0)
+  minutesPlayed   Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerId, seasonId])
+  @@index([playerId])
+  @@index([seasonId])
+  @@map("player_season_stats")
+}
+
+model XgTeamMatch {
+  id              String   @id @default(cuid())
+  matchId         String
+  teamId          String
+  team            Team     @relation(fields: [teamId], references: [id])
+  match           Match    @relation(fields: [matchId], references: [id])
+  xg              Float?
+  xga             Float?   // Expected goals against
+  npxg            Float?   // Non-penalty xG
+  shots           Int?
+  shotsOnTarget   Int?
+  deepCompletions Int?
+  createdAt       DateTime @default(now())
+
+  @@unique([matchId, teamId])
+  @@index([matchId])
+  @@index([teamId])
+  @@map("xg_team_match")
+}
+
+model XgPlayerMatch {
+  id              String   @id @default(cuid())
+  matchId         String
+  playerId        String
+  player          Player   @relation(fields: [playerId], references: [id])
+  match           Match    @relation(fields: [matchId], references: [id])
+  xg              Float?
+  shots           Int?
+  shotsOnTarget   Int?
+  keyPasses       Int?
+  createdAt       DateTime @default(now())
+
+  @@unique([matchId, playerId])
+  @@index([matchId])
+  @@index([playerId])
+  @@map("xg_player_match")
+}
+
+// INTELLIGENCE
+
+model MatchFeature {
+  id                      String   @id @default(cuid())
+  matchId                 String
+  match                   Match    @relation(fields: [matchId], references: [id])
+  homeForm                Float?
+  awayForm                Float?
+  homeAttackStrength      Float?
+  awayAttackStrength      Float?
+  homeDefenseStrength     Float?
+  awayDefenseStrength     Float?
+  homeXgAverage           Float?
+  awayXgAverage           Float?
+  homeXgaAverage          Float?
+  awayXgaAverage          Float?
+  homeAdvantage           Float?
+  h2hSignal               Float?
+  injuryImpactHome        Float?
+  injuryImpactAway        Float?
+  refereeSignal           Float?
+  weatherSignal           Float?
+  dataQualityScore        Float    @default(0.0)
+  calculatedAt            DateTime @default(now())
+
+  @@unique([matchId])
+  @@index([matchId])
+  @@map("match_features")
+}
+
+model MarketProbability {
+  id                      String   @id @default(cuid())
+  matchId                 String
+  match                   Match    @relation(fields: [matchId], references: [id])
+  marketType              String   // "1X2", "OVER_UNDER_2_5", "BTTS", etc.
+  homeProbability          Float?
+  drawProbability          Float?
+  awayProbability         Float?
+  overProbability         Float?
+  underProbability        Float?
+  yesProbability          Float?
+  noProbability           Float?
+  calculatedAt            DateTime @default(now())
+  version                 String   @default("v1")
+
+  @@unique([matchId, marketType])
+  @@index([matchId])
+  @@index([marketType])
+  @@map("market_probabilities")
+}
+
+// PROVIDER INFRASTRUCTURE
+
+model ProviderMapping {
+  id                String   @id @default(cuid())
+  entityType        String   // "team", "player", "competition", "match", "referee", "venue"
+  octopusEntityId   String
+  provider          String   // "match_api", "fbref", "understat", "weather", "referee"
+  providerEntityId  String
+  providerName      String?  // Optional: normalized name from provider
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([entityType, provider, providerEntityId])
+  @@index([entityType])
+  @@index([octopusEntityId])
+  @@index([provider])
+  @@map("provider_mappings")
+}
+
+model ProviderRawData {
+  id              String   @id @default(cuid())
+  provider        String   // "match_api", "fbref", "understat", "weather", "referee"
+  endpoint        String
+  externalId      String?
+  payloadJson     String   // JSON string of raw response
+  fetchedAt       DateTime @default(now())
+  contentHash     String   // Hash of payload for deduplication
+  status          String   @default("success") // "success", "error"
+  errorMessage    String?
+
+  @@index([provider])
+  @@index([endpoint])
+  @@index([externalId])
+  @@index([fetchedAt])
+  @@map("provider_raw_data")
+}
+
+model ProviderSyncLog {
+  id                String   @id @default(cuid())
+  provider          String   // "match_api", "fbref", "understat", "weather", "referee"
+  syncType          String   // "daily_fixtures", "match_details", "statistics", "lineups", "events"
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  status            String   @default("running") // "running", "completed", "failed", "partial"
+  recordsFetched    Int      @default(0)
+  recordsCreated    Int      @default(0)
+  recordsUpdated    Int      @default(0)
+  recordsSkipped    Int      @default(0)
+  errorCount        Int      @default(0)
+  errorMessage      String?
+  metadata          String?  // JSON string for additional context
+
+  @@index([provider])
+  @@index([syncType])
+  @@index([status])
+  @@index([startedAt])
+  @@map("provider_sync_logs")
+}

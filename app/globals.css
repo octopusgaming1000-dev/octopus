@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  min-width: 0; /* Allow content to shrink */
+}
+
+/* Fix for password masking issue - REMOVED to fix cursor issues */
+
+/* Safari specific fix - REMOVED to fix cursor issues */
+
+/* Fix for contentEditable text visibility issue */
+[contenteditable="true"] {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Specific fix for booking code textarea */
+.booking-code-textarea {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  -webkit-text-security: none !important;
+  color: #000000 !important;
+  text-security: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  resize: none !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  outline: none !important;
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.booking-code-textarea::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.booking-code-textarea::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+.booking-code-textarea::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+/* Placeholder for contentEditable div */
+[data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Professional enhancements */
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  
+  .gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .shadow-professional {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift {
+    transition: transform 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Professional form styling */
+  .input-professional {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: #000000;
+  }
+
+  /* Adjust padding for inputs with eye icons */
+  .input-professional.pr-12 {
+    padding-right: 48px !important;
+  }
+
+  /* Specific fix for password inputs */
+  input[type="password"].input-professional {
+    color: #000000 !important;
+  }
+
+  /* Email and text inputs */
+  input[type="email"].input-professional,
+  input[type="text"].input-professional {
+    color: #000000 !important;
+  }
+  
+  .input-professional:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .input-professional::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+  }
+  
+  .button-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  }
+  
+  .card-professional {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    border: 1px solid #f3f4f6;
+    overflow: hidden;
+  }
+  
+  /* User-friendly animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  .animate-bounce {
+    animation: bounce 3s ease-in-out infinite;
+    transform-origin: top center;
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  /* Professional typography */
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Responsive improvements */
+  .container-professional {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  @media (max-width: 768px) {
+    .container-professional {
+      padding: 0 16px;
+    }
+  }
+}
+
