@@ -6,6 +6,7 @@ export interface AiPredictionData {
   predictedProbability: number
   predictedValue: string
   confidenceLevel?: number
+  userId?: string
 }
 
 export interface CalibrationResult {
@@ -55,9 +56,9 @@ export class AiPredictionService {
         data: {
           matchId: data.matchId,
           marketType: data.marketType,
-          predictedProbability: data.predictedProbability,
           predictedValue: data.predictedValue.toUpperCase(),
-          confidenceLevel: data.confidenceLevel || 0.5,
+          confidence: Math.round((data.confidenceLevel || 0.5) * 5),
+          userId: data.userId || 'guest',
         },
       })
       

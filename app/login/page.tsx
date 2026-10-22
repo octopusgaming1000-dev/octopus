@@ -65,7 +65,8 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
+        setError(data.error || 'Login failed')
+        return
       }
 
       // Store token (in production, use httpOnly cookies)
@@ -75,7 +76,7 @@ export default function LoginPage() {
 
       router.push('/dashboard')
     } catch (err: any) {
-      // Silent error handling - don't show error to user
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -143,6 +144,13 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -150,6 +158,12 @@ export default function LoginPage() {
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
+
+            <div className="text-center">
+              <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </form>
 
           <div className="relative my-6">

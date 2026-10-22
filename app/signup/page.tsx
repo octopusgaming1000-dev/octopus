@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null)
   
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -24,6 +25,28 @@ export default function SignupPage() {
       isMounted.current = false
     }
   }, [])
+
+  const checkPasswordStrength = (password: string) => {
+    let strength = 0
+    if (password.length >= 8) strength++
+    if (/[A-Z]/.test(password)) strength++
+    if (/[a-z]/.test(password)) strength++
+    if (/[0-9]/.test(password)) strength++
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++
+    
+    if (strength <= 2) return 'weak'
+    if (strength <= 3) return 'medium'
+    return 'strong'
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const password = e.target.value
+    if (password) {
+      setPasswordStrength(checkPasswordStrength(password))
+    } else {
+      setPasswordStrength(null)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +84,7 @@ export default function SignupPage() {
         setError(data.error || 'Signup failed')
       }
     } catch (error) {
-      // Silent error handling - don't show error to user
+      setError('Network error. Please check your connection and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -92,6 +115,7 @@ export default function SignupPage() {
                 type="email"
                 className="input-professional w-full"
                 required
+                placeholder="your@email.com"
               />
             </div>
 
@@ -106,6 +130,8 @@ export default function SignupPage() {
                   type={showPassword ? "text" : "password"}
                   className="input-professional w-full pr-12"
                   required
+                  onChange={handlePasswordChange}
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
@@ -115,7 +141,7 @@ export default function SignupPage() {
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943-9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                     </svg>
                   ) : (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,6 +151,31 @@ export default function SignupPage() {
                   )}
                 </button>
               </div>
+              {passwordStrength && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all ${
+                          passwordStrength === 'weak' ? 'bg-red-500 w-1/3' :
+                          passwordStrength === 'medium' ? 'bg-yellow-500 w-2/3' :
+                          'bg-green-500 w-full'
+                        }`}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${
+                      passwordStrength === 'weak' ? 'text-red-600' :
+                      passwordStrength === 'medium' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Must be 8+ characters with uppercase, lowercase, number, and special character
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -138,6 +189,7 @@ export default function SignupPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   className="input-professional w-full pr-12"
                   required
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
@@ -147,7 +199,7 @@ export default function SignupPage() {
                 >
                   {showConfirmPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943-9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                     </svg>
                   ) : (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,6 +210,12 @@ export default function SignupPage() {
                 </button>
               </div>
             </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
 
             <div>
               <button

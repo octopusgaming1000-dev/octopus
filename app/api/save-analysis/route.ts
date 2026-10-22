@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server.js'
-import { prisma } from '/Users/mac/betcode intelligence/lib/prisma'
-import { verifyPassword, hashPassword } from '/Users/mac/betcode intelligence/lib/auth'
-import { MarketAnalysis, MatchData } from '/Users/mac/betcode intelligence/lib/analysis-engine'
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { verifyPassword, hashPassword } from '@/lib/auth'
+import { MarketAnalysis, MatchData } from '@/lib/analysis-engine'
 
 // Use type assertion to bypass TypeScript issues temporarily
 const prismaClient = prisma as any

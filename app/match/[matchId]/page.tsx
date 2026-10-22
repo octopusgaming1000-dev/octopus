@@ -73,15 +73,15 @@ export default function MatchDetailPage() {
   })
 
   useEffect(() => {
-    if (params.matchId) {
+    if (params?.matchId) {
       fetchMatchData()
       fetchPredictions()
     }
-  }, [params.matchId])
+  }, [params?.matchId])
 
   const fetchMatchData = async () => {
     try {
-      const response = await fetch(`/api/match/${params.matchId}`)
+      const response = await fetch(`/api/match/${params?.matchId}`)
       if (response.ok) {
         const data = await response.json()
         setMatch(data.match)
@@ -94,7 +94,7 @@ export default function MatchDetailPage() {
 
   const fetchPredictions = async () => {
     try {
-      const response = await fetch(`/api/match/${params.matchId}/predictions`)
+      const response = await fetch(`/api/match/${params?.matchId}/predictions`)
       if (response.ok) {
         const data = await response.json()
         setPredictions(data.predictions || [])
@@ -108,7 +108,7 @@ export default function MatchDetailPage() {
 
   const handlePredictionSubmit = async () => {
     try {
-      const response = await fetch(`/api/match/${params.matchId}/predictions`, {
+      const response = await fetch(`/api/match/${params?.matchId}/predictions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ export default function MatchDetailPage() {
 
   const handleVote = async (predictionId: string, voteType: 'up' | 'down') => {
     try {
-      await fetch(`/api/match/${params.matchId}/predictions/${predictionId}/vote`, {
+      await fetch(`/api/match/${params?.matchId}/predictions/${predictionId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
